@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K8s CrashLoop Analyzer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+        }
+        .issue {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-left: 4px solid #e74c3c;
+            background: white;
+            border-radius: 4px;
+        }
+        .issue.warning {
+            border-left-color: #f39c12;
+        }
+        .issue.info {
+            border-left-color: #3498db;
+        }
+        .issue h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .suggestions {
+            margin-top: 10px;
+        }
+        .suggestion {
+            margin: 5px 0;
+            padding: 8px;
+            background: #ecf0f1;
+            border-radius: 3px;
+        }
+        .docs-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .docs-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 K8s CrashLoop Analyzer</h1>
+        <p class="subtitle">Paste your pod logs or describe output — get root cause hints</p>
+        
+        <textarea id="logInput" placeholder="Paste your kubectl describe pod output and/or kubectl logs output here...
+
+Example:
+kubectl describe pod my-app-pod
+kubectl logs my-app-pod
+
+The analyzer will identify common issues like:
+- ImagePullBackOff
+- CrashLoopBackOff  
+- OOMKilled
+- Failed mounts
+- Resource limits
+- And more..."></textarea>
+        
+        <button onclick="analyzeLogs()">Analyze Logs</button>
+        
+        <div id="results" class="results"></div>
+    </div>
+
+    <script src="analyzer.js"></script>
+</body>
+</html>
