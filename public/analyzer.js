@@ -178,17 +178,23 @@ async function fetchAiAssistedExplanation(result, fullLogText) {
             })
         });
 
-        if (!response.ok) {
+        console.log("AI API response status:", response.status);
+
+        if (response.status === 204) {
+            console.warn("AI assist is disabled on the server (no API key configured).");
             return null;
         }
 
-        if (response.status === 204) {
+        if (!response.ok) {
+            console.warn("AI API returned error status:", response.status);
             return null;
         }
 
         const payload = await response.json();
+        console.log("AI API payload:", payload);
         return payload?.ai || null;
     } catch (_err) {
+        console.warn("AI API fetch failed:", _err);
         return null;
     }
 }
