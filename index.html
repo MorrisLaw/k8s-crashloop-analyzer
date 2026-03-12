@@ -97,7 +97,7 @@
 <body>
     <div class="container">
         <h1>🔍 K8s CrashLoop Analyzer</h1>
-        <p class="subtitle">Paste your pod logs or describe output — get root cause hints</p>
+        <p class="subtitle">Paste pod logs or describe output to get likely cause and kubectl runbook commands</p>
         
         <textarea id="logInput" placeholder="Paste your kubectl describe pod output and/or kubectl logs output here...
 
@@ -107,11 +107,9 @@ kubectl logs my-app-pod
 
 The analyzer will identify common issues like:
 - ImagePullBackOff
-- CrashLoopBackOff  
+- CrashLoopBackOff due to missing env
 - OOMKilled
-- Failed mounts
-- Resource limits
-- And more..."></textarea>
+- Port binding failures"></textarea>
         
         <button onclick="analyzeLogs()">Analyze Logs</button>
         
