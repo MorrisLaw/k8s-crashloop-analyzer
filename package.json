@@ -1,0 +1,11 @@
+{
+  "name": "k8s-crashloop-analyzer",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node tests/analyzer.test.js && node tests/llm-explainer.test.js",
+    "start": "node server.js"
+  },
+  "devDependencies": {
+    "dotenv": "^16.6.1"
+  }
+}

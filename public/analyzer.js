@@ -38,6 +38,17 @@ class K8sCrashLoopAnalyzer {
                 ]
             },
             {
+                cause: "CrashLoopBackOff",
+                regex: /CrashLoopBackOff|Back-off restarting failed container/i,
+                explanation:
+                    "The container is repeatedly crashing. Check previous container logs for the root cause.",
+                suggestedCommands: [
+                    "kubectl logs <pod> --previous",
+                    "kubectl describe pod <pod>",
+                    "kubectl get events --sort-by=.lastTimestamp"
+                ]
+            },
+            {
                 cause: "Port binding failure",
                 regex: /address already in use|bind: permission denied|listen tcp.*bind/i,
                 explanation:
@@ -105,7 +116,7 @@ class K8sCrashLoopAnalyzer {
     }
 }
 
-function analyzeLogs() {
+async function analyzeLogs() {
     const logInput = document.getElementById("logInput").value.trim();
     const resultsDiv = document.getElementById("results");
 
@@ -116,6 +127,7 @@ function analyzeLogs() {
 
     const analyzer = new K8sCrashLoopAnalyzer();
     const result = analyzer.analyze(logInput);
+    const aiExplanation = await fetchAiAssistedExplanation(result, logInput);
 
     const evidenceBlock = result.matchingLines.length
         ? `
@@ -145,10 +157,64 @@ function analyzeLogs() {
 }, null, 2))}</pre>
             </div>
         </div>
+        ${renderAiExplanation(aiExplanation)}
     `;
 
     resultsDiv.style.display = "block";
     resultsDiv.scrollIntoView({ behavior: "smooth" });
+}
+
+async function fetchAiAssistedExplanation(result, fullLogText) {
+    // Deterministic output is primary. This optional AI call is best-effort only.
+    // If unavailable, disabled, or failing, we return null and keep core behavior unchanged.
+    try {
+        const response = await fetch("/api/ai-explanation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                cause: result.cause,
+                explanation: result.explanation,
+                logText: fullLogText.slice(0, 4000)
+            })
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        if (response.status === 204) {
+            return null;
+        }
+
+        const payload = await response.json();
+        return payload?.ai || null;
+    } catch (_err) {
+        return null;
+    }
+}
+
+function renderAiExplanation(ai) {
+    if (!ai) {
+        return "";
+    }
+
+    const nextSteps = Array.isArray(ai.next_steps) ? ai.next_steps : [];
+    const suggestedChecks = Array.isArray(ai.suggested_checks) ? ai.suggested_checks : [];
+
+    return `
+        <div class="issue info">
+            <h3>AI-assisted explanation</h3>
+            <p>${escapeHtml(ai.summary || "")}</p>
+            <div class="suggestions">
+                <strong>Likely next troubleshooting steps:</strong>
+                ${nextSteps.map((step) => `<div class="suggestion">${escapeHtml(step)}</div>`).join("")}
+            </div>
+            <div class="suggestions">
+                <strong>Suggested follow-up checks:</strong>
+                ${suggestedChecks.map((check) => `<div class="suggestion">${escapeHtml(check)}</div>`).join("")}
+            </div>
+        </div>
+    `;
 }
 
 function escapeHtml(text) {

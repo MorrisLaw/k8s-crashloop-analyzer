@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>K8s CrashLoop Analyzer (Beta)</title>
+    <title>K8s CrashLoop Analyzer</title>
+    <meta name="description" content="Paste kubectl logs or describe output to instantly identify common Kubernetes failure patterns like OOMKilled, ImagePullBackOff, and CrashLoopBackOff.">
+    <meta property="og:title" content="K8s CrashLoop Analyzer">
+    <meta property="og:description" content="Deterministic root-cause detection for Kubernetes pod failures with optional AI-assisted explanation.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://crashloop-analyzer.vercel.app/">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -30,6 +36,7 @@
         }
         textarea {
             width: 100%;
+            box-sizing: border-box;
             height: 300px;
             padding: 15px;
             border: 2px solid #ddd;
@@ -97,7 +104,7 @@
 <body>
     <div class="container">
         <h1>🔍 K8s CrashLoop Analyzer</h1>
-        <p class="subtitle">Paste pod logs or describe output to get likely cause and kubectl runbook commands</p>
+        <p class="subtitle">Paste pod logs or describe output to get deterministic root-cause hints and optional AI-assisted explanation</p>
         
         <textarea id="logInput" placeholder="Paste your kubectl describe pod output and/or kubectl logs output here...
 

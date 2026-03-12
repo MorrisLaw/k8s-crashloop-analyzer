@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { K8sCrashLoopAnalyzer } = require("../analyzer.js");
+const { K8sCrashLoopAnalyzer } = require("../public/analyzer.js");
 
 function run() {
     const analyzer = new K8sCrashLoopAnalyzer();
@@ -22,6 +22,12 @@ function run() {
             input: "Back-off restarting failed container\nerror: environment variable DB_URL not set",
             expectedCause: "CrashLoopBackOff (missing env)",
             expectedCommand: "kubectl get deploy <deployment> -o yaml"
+        },
+        {
+            name: "detects generic CrashLoopBackOff",
+            input: "Back-off restarting failed container",
+            expectedCause: "CrashLoopBackOff",
+            expectedCommand: "kubectl logs <pod> --previous"
         },
         {
             name: "detects port binding failure",

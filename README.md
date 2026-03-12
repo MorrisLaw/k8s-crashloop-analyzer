@@ -1,16 +1,25 @@
 # K8s CrashLoop Analyzer
 
-Lightweight rule-based Kubernetes troubleshooting assistant for platform engineers and SREs.
+A Kubernetes CrashLoopBackOff debugging tool that combines deterministic failure-pattern detection with optional AI-assisted explanation.
 
 ## Problem Statement
 
-Debugging `CrashLoopBackOff` incidents is often slow and manual. Engineers usually jump between `kubectl describe`, previous logs, events, and resource metrics to find a likely root cause. This tool speeds up first-pass triage by matching common failure patterns in pod logs and describe output.
+Debugging `CrashLoopBackOff` is often slow and manual. Engineers switch between `kubectl describe`, prior container logs, and cluster events to identify root causes under pressure.
 
-## Example Input/Output
+## Feature Overview
+
+- Deterministic rule engine is the primary source of truth.
+- Rule matching detects common failure patterns from pasted logs/describe output.
+- Returns:
+  - likely cause
+  - deterministic explanation
+  - suggested `kubectl` commands
+- Optional Gemini-based AI explanation adds concise guidance if configured.
+- AI calls are server-side only.
+
+## Example Input / Output
 
 ### Input
-
-Kubernetes pod logs / describe output:
 
 ```text
 State:          Waiting
@@ -19,7 +28,7 @@ Last State:     Terminated
   Reason:       OOMKilled
 ```
 
-### Output
+### Deterministic Output
 
 ```json
 {
@@ -33,49 +42,91 @@ Last State:     Terminated
 }
 ```
 
-Likely cause: `OOMKilled`  
-Explanation: container exceeded memory limits and was terminated  
-Suggested kubectl commands: describe, previous logs, and resource usage
+### Optional AI-assisted Output
+
+```json
+{
+  "summary": "The container likely exceeded memory limits during startup and was restarted.",
+  "next_steps": [
+    "Inspect previous container logs for memory spikes",
+    "Compare pod memory limits against observed usage",
+    "Adjust limits/requests and redeploy"
+  ],
+  "suggested_checks": [
+    "kubectl top pod <pod>",
+    "kubectl describe pod <pod>"
+  ]
+}
+```
 
 ## Architecture Overview
 
-1. Input ingestion: paste `kubectl logs` and/or `kubectl describe pod` output.
-2. Rule matching: deterministic regex checks for known Kubernetes failure signatures.
-3. Structured result: returns `cause`, `explanation`, and `suggestedCommands`.
-4. UI rendering: displays matching evidence lines and command runbook hints.
+1. Frontend (`public/analyzer.js`) runs deterministic detection first.
+2. UI immediately renders deterministic output.
+3. Optional step calls `/api/ai-explanation` for Gemini explanation.
+4. Server-side explainer (`server/llm-explainer.js`) returns concise JSON or gracefully skips.
+
+Deterministic analysis still works when no API key is configured.
 
 ## Supported Failure Patterns
 
 - `OOMKilled`
 - `ImagePullBackOff` / `ErrImagePull`
 - `CrashLoopBackOff` caused by missing environment/config values
+- Generic `CrashLoopBackOff` fallback
 - Port binding failure (for example, `address already in use`)
 
-## Screenshot
+## AI Setup (Gemini Free Tier)
 
-Add a UI screenshot after running the analyzer locally:
+Get a free Gemini API key: https://aistudio.google.com/apikey
 
-1. Start the static page (for example, `python3 -m http.server 8000`).
-2. Open `http://localhost:8000`.
-3. Paste sample logs and click **Analyze Logs**.
-4. Capture the output and save it as `docs/screenshot.png`.
-5. Reference it here:
+Use environment variable `GEMINI_API_KEY`.
 
-```md
-![K8s CrashLoop Analyzer UI](docs/screenshot.png)
-```
+### Local Development
 
-## Future Improvements
-
-- Multi-signal correlation across logs, events, and pod spec fields
-- Namespace-aware and workload-aware command suggestions
-- Optional AI-assisted ranking of likely causes (on top of current deterministic rules)
-- Exportable incident report output for on-call handoffs
-
-## Local Testing
-
-Run the rule-mapping tests with:
+1. Copy `.env.example` to `.env`.
+2. Set `GEMINI_API_KEY` in `.env`.
+3. Install dependencies:
 
 ```bash
-node tests/analyzer.test.js
+npm install
+```
+
+4. Start local server:
+
+```bash
+npm start
+```
+
+5. Open:
+
+```text
+http://localhost:8000
+```
+
+If `GEMINI_API_KEY` is missing or Gemini fails, deterministic output still works and AI output is skipped.
+
+### Vercel Deployment
+
+Set `GEMINI_API_KEY` in Vercel Dashboard:
+
+`Project Settings -> Environment Variables`
+
+Vercel injects this env var at runtime; `dotenv` is only for local dev.
+
+## Rate Limiting
+
+`/api/ai-explanation` is limited to 10 requests per minute per IP (in-memory).
+
+## Project Structure
+
+- `public/` static frontend (`index.html`, `analyzer.js`)
+- `api/ai-explanation.js` Vercel serverless AI endpoint
+- `server/llm-explainer.js` provider integration and fallback
+- `server.js` local development server (serves only `public/`)
+
+## Testing
+
+```bash
+npm test
 ```
