@@ -26,6 +26,17 @@ class K8sCrashLoopAnalyzer {
                 ]
             },
             {
+                cause: "CreateContainerConfigError",
+                regex: /CreateContainerConfigError|create container config error/i,
+                explanation:
+                    "The container could not start because a referenced ConfigMap or Secret is missing or has an invalid key.",
+                suggestedCommands: [
+                    "kubectl describe pod <pod>",
+                    "kubectl get configmap",
+                    "kubectl get secret"
+                ]
+            },
+            {
                 cause: "CrashLoopBackOff (missing env)",
                 regex: /CrashLoopBackOff|Back-off restarting failed container/i,
                 extraRegex: /environment variable.*not set|missing env|secret.*not found|configmap.*not found/i,

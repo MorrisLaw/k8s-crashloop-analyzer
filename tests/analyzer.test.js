@@ -30,6 +30,12 @@ function run() {
             expectedCommand: "kubectl logs <pod> --previous"
         },
         {
+            name: "detects CreateContainerConfigError",
+            input: "Warning  Failed  30s  kubelet  Error: CreateContainerConfigError",
+            expectedCause: "CreateContainerConfigError",
+            expectedCommand: "kubectl describe pod <pod>"
+        },
+        {
             name: "detects port binding failure",
             input: "listen tcp :8080: bind: address already in use",
             expectedCause: "Port binding failure",

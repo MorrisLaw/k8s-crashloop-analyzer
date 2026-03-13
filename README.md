@@ -2,6 +2,8 @@
 
 A Kubernetes CrashLoopBackOff debugging tool that combines deterministic failure-pattern detection with optional AI-assisted explanation.
 
+![K8s CrashLoop Analyzer Screenshot](docs/screenshot.png)
+
 ## Problem Statement
 
 Debugging `CrashLoopBackOff` is often slow and manual. Engineers switch between `kubectl describe`, prior container logs, and cluster events to identify root causes under pressure.
@@ -61,7 +63,7 @@ Last State:     Terminated
 
 ## Architecture Overview
 
-1. Frontend (`public/analyzer.js`) runs deterministic detection first.
+1. Frontend (`public/analyzer.js`) runs deterministic detection first. This mirrors typical Kubernetes debugging workflows where engineers first identify common failure patterns before investigating deeper system causes.
 2. UI immediately renders deterministic output.
 3. Optional step calls `/api/ai-explanation` for Gemini explanation.
 4. Server-side explainer (`server/llm-explainer.js`) returns concise JSON or gracefully skips.
@@ -72,6 +74,7 @@ Deterministic analysis still works when no API key is configured.
 
 - `OOMKilled`
 - `ImagePullBackOff` / `ErrImagePull`
+- `CreateContainerConfigError` (missing ConfigMap or Secret)
 - `CrashLoopBackOff` caused by missing environment/config values
 - Generic `CrashLoopBackOff` fallback
 - Port binding failure (for example, `address already in use`)
