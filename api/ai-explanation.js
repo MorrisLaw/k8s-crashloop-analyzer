@@ -1,6 +1,6 @@
 const { createAiExplainer, sanitizeLogSnippet } = require("../server/llm-explainer");
 
-console.log("[ai-explanation] GEMINI_API_KEY present:", Boolean(process.env.GEMINI_API_KEY));
+console.log("[ai-explanation] GROQ_API_KEY present:", Boolean(process.env.GROQ_API_KEY));
 const aiExplainer = createAiExplainer();
 console.log("[ai-explanation] aiExplainer.isEnabled():", aiExplainer.isEnabled());
 const RATE_LIMIT_MAX_PER_MINUTE = 10;
@@ -31,7 +31,7 @@ async function handler(req, res) {
     }
 
     if (!aiExplainer.isEnabled()) {
-        console.warn("[ai-explanation] AI explainer disabled. GEMINI_API_KEY:", process.env.GEMINI_API_KEY ? "set" : "MISSING");
+        console.warn("[ai-explanation] AI explainer disabled. GROQ_API_KEY:", process.env.GROQ_API_KEY ? "set" : "MISSING");
         res.status(204).end();
         return;
     }

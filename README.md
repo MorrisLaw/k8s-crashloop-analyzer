@@ -16,7 +16,7 @@ Debugging `CrashLoopBackOff` is often slow and manual. Engineers switch between 
   - likely cause
   - deterministic explanation
   - suggested `kubectl` commands
-- Optional Gemini-based AI explanation adds concise guidance if configured.
+- Optional Groq-based AI explanation adds concise guidance if configured.
 - AI calls are server-side only.
 
 ## Example Input / Output
@@ -65,7 +65,7 @@ Last State:     Terminated
 
 1. Frontend (`public/analyzer.js`) runs deterministic detection first. This mirrors typical Kubernetes debugging workflows where engineers first identify common failure patterns before investigating deeper system causes.
 2. UI immediately renders deterministic output.
-3. Optional step calls `/api/ai-explanation` for Gemini explanation.
+3. Optional step calls `/api/ai-explanation` for AI explanation.
 4. Server-side explainer (`server/llm-explainer.js`) returns concise JSON or gracefully skips.
 
 Deterministic analysis still works when no API key is configured.
@@ -79,16 +79,18 @@ Deterministic analysis still works when no API key is configured.
 - Generic `CrashLoopBackOff` fallback
 - Port binding failure (for example, `address already in use`)
 
-## AI Setup (Gemini Free Tier)
+## AI Setup (Groq — free tier)
 
-Get a free Gemini API key: https://aistudio.google.com/apikey
+Get a free API key: https://console.groq.com
 
-Use environment variable `GEMINI_API_KEY`.
+Uses `llama-3.3-70b-versatile` with 30 RPM / 14,400 RPD on the free tier.
+
+Set environment variable `GROQ_API_KEY`.
 
 ### Local Development
 
 1. Copy `.env.example` to `.env`.
-2. Set `GEMINI_API_KEY` in `.env`.
+2. Set `GROQ_API_KEY` in `.env`.
 3. Install dependencies:
 
 ```bash
@@ -107,11 +109,11 @@ npm start
 http://localhost:8000
 ```
 
-If `GEMINI_API_KEY` is missing or Gemini fails, deterministic output still works and AI output is skipped.
+If `GROQ_API_KEY` is missing or the provider fails, deterministic output still works and AI output is skipped.
 
 ### Vercel Deployment
 
-Set `GEMINI_API_KEY` in Vercel Dashboard:
+Set `GROQ_API_KEY` in Vercel Dashboard:
 
 `Project Settings -> Environment Variables`
 
