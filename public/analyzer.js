@@ -219,6 +219,7 @@ function renderAiExplanation(result) {
             <div class="issue warning">
                 <h3>AI-assisted explanation temporarily unavailable</h3>
                 <p>Too many requests — please wait a minute and try again. The deterministic analysis above is still accurate.</p>
+                <p style="margin-top: 10px; font-size: 13px; color: #7f8c8d;">This tool uses a free-tier AI provider with limited capacity. Interested in a paid tier with higher limits? <a href="https://forms.gle/W2xPf67LTkpf3CuS7" target="_blank" class="docs-link">Let us know</a>.</p>
             </div>
         `;
     }
