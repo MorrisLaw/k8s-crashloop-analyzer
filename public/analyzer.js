@@ -75,6 +75,8 @@ class K8sCrashLoopAnalyzer {
 
     analyze(logText) {
         const lines = logText.split("\n");
+        const podName = this.extractPodName(logText);
+        const deploymentName = this.extractDeploymentName(podName);
 
         // Analysis pipeline:
         // 1) Normalize and inspect the incoming text.
@@ -93,7 +95,7 @@ class K8sCrashLoopAnalyzer {
             return {
                 cause: rule.cause,
                 explanation: rule.explanation,
-                suggestedCommands: rule.suggestedCommands,
+                suggestedCommands: this.substituteNames(rule.suggestedCommands, podName, deploymentName),
                 matchingLines: this.findMatchingLines(lines, [rule.regex, rule.extraRegex].filter(Boolean))
             };
         }
@@ -109,6 +111,28 @@ class K8sCrashLoopAnalyzer {
             ],
             matchingLines: []
         };
+    }
+
+    extractPodName(logText) {
+        // Try "Name:" field from kubectl describe output
+        const nameMatch = logText.match(/^Name:\s+(\S+)/m);
+        if (nameMatch) return nameMatch[1];
+        return null;
+    }
+
+    extractDeploymentName(podName) {
+        if (!podName) return null;
+        // Strip pod hash suffix (e.g., my-app-5d4b7c8f9b-xyz12 -> my-app)
+        const match = podName.match(/^(.+)-[a-z0-9]+-[a-z0-9]+$/);
+        return match ? match[1] : null;
+    }
+
+    substituteNames(commands, podName, deploymentName) {
+        return commands.map((cmd) => {
+            if (podName) cmd = cmd.replace(/<pod>/g, podName);
+            if (deploymentName) cmd = cmd.replace(/<deployment>/g, deploymentName);
+            return cmd;
+        });
     }
 
     findMatchingLines(lines, regexes) {
