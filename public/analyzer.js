@@ -179,10 +179,12 @@ async function fetchAiAssistedExplanation(result, fullLogText) {
     // Deterministic output is primary. This optional AI call is best-effort only.
     // If unavailable, disabled, or failing, we return null and keep core behavior unchanged.
 
-    // Check localStorage cache first — AI explanations for the same cause are reusable.
+    // Check localStorage cache first — keyed by cause + log content hash
+    // so different pods with the same cause get unique AI responses.
     const CACHE_KEY_PREFIX = "ai_cache_";
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-    const cacheKey = CACHE_KEY_PREFIX + result.cause;
+    const logHash = simpleHash(fullLogText);
+    const cacheKey = CACHE_KEY_PREFIX + result.cause + "_" + logHash;
 
     try {
         const cached = localStorage.getItem(cacheKey);
@@ -209,27 +211,21 @@ async function fetchAiAssistedExplanation(result, fullLogText) {
             })
         });
 
-        console.log("AI API response status:", response.status);
-
         if (response.status === 204) {
-            console.warn("AI assist is disabled on the server (no API key configured).");
             return null;
         }
 
         if (!response.ok) {
-            console.warn("AI API returned error status:", response.status);
             return null;
         }
 
         const payload = await response.json();
-        console.log("AI API payload:", payload);
         const ai = payload?.ai || null;
 
         // Cache successful responses in localStorage
         if (ai) {
             try {
                 localStorage.setItem(cacheKey, JSON.stringify({ data: ai, timestamp: Date.now() }));
-                console.log("AI response cached for:", result.cause);
             } catch (_e) {
                 // Quota exceeded or unavailable — non-critical
             }
@@ -237,7 +233,6 @@ async function fetchAiAssistedExplanation(result, fullLogText) {
 
         return ai;
     } catch (_err) {
-        console.warn("AI API fetch failed:", _err);
         return null;
     }
 }
@@ -264,6 +259,15 @@ function renderAiExplanation(ai) {
             </div>
         </div>
     `;
+}
+
+// Simple string hash for cache keys — not cryptographic, just for deduplication.
+function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+    }
+    return (hash >>> 0).toString(36);
 }
 
 function escapeHtml(text) {
