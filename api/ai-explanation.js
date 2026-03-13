@@ -42,7 +42,18 @@ async function handler(req, res) {
         return;
     }
 
-    const ai = await aiExplainer.explain({ cause, explanation, logSnippet });
+    let ai;
+    try {
+        ai = await aiExplainer.explain({ cause, explanation, logSnippet });
+    } catch (err) {
+        if (err.code === "RATE_LIMITED") {
+            res.status(429).json({ error: "AI provider rate limit reached. Please wait a minute and try again." });
+            return;
+        }
+        res.status(204).end();
+        return;
+    }
+
     if (!ai) {
         res.status(204).end();
         return;

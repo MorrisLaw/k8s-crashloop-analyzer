@@ -96,6 +96,11 @@ class GroqExplainer {
             if (!response.ok) {
                 const errorBody = await response.text().catch(() => "");
                 console.error("[groq] API error:", response.status, errorBody.slice(0, 500));
+                if (response.status === 429) {
+                    const err = new Error("Rate limited by Groq");
+                    err.code = "RATE_LIMITED";
+                    throw err;
+                }
                 return null;
             }
 

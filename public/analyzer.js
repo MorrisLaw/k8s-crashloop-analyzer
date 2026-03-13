@@ -177,29 +177,7 @@ async function analyzeLogs() {
 
 async function fetchAiAssistedExplanation(result, fullLogText) {
     // Deterministic output is primary. This optional AI call is best-effort only.
-    // If unavailable, disabled, or failing, we return null and keep core behavior unchanged.
-
-    // Check localStorage cache first — keyed by cause + log content hash
-    // so different pods with the same cause get unique AI responses.
-    const CACHE_KEY_PREFIX = "ai_cache_";
-    const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-    const logHash = simpleHash(fullLogText);
-    const cacheKey = CACHE_KEY_PREFIX + result.cause + "_" + logHash;
-
-    try {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-            const { data, timestamp } = JSON.parse(cached);
-            if (Date.now() - timestamp < CACHE_TTL_MS) {
-                console.log("AI response loaded from cache for:", result.cause);
-                return data;
-            }
-            localStorage.removeItem(cacheKey);
-        }
-    } catch (_e) {
-        // localStorage unavailable or corrupt — continue to fetch
-    }
-
+    // If unavailable, disabled, or failing, we return a status object.
     try {
         const response = await fetch("/api/ai-explanation", {
             method: "POST",
@@ -212,35 +190,44 @@ async function fetchAiAssistedExplanation(result, fullLogText) {
         });
 
         if (response.status === 204) {
-            return null;
+            return { status: "disabled" };
+        }
+
+        if (response.status === 429) {
+            return { status: "rate-limited" };
         }
 
         if (!response.ok) {
-            return null;
+            return { status: "error" };
         }
 
         const payload = await response.json();
         const ai = payload?.ai || null;
-
-        // Cache successful responses in localStorage
-        if (ai) {
-            try {
-                localStorage.setItem(cacheKey, JSON.stringify({ data: ai, timestamp: Date.now() }));
-            } catch (_e) {
-                // Quota exceeded or unavailable — non-critical
-            }
-        }
-
-        return ai;
+        return ai ? { status: "ok", data: ai } : { status: "error" };
     } catch (_err) {
-        return null;
+        return { status: "error" };
     }
 }
 
-function renderAiExplanation(ai) {
-    if (!ai) {
+function renderAiExplanation(result) {
+    if (!result || result.status === "disabled") {
         return "";
     }
+
+    if (result.status === "rate-limited") {
+        return `
+            <div class="issue warning">
+                <h3>AI-assisted explanation temporarily unavailable</h3>
+                <p>Too many requests — please wait a minute and try again. The deterministic analysis above is still accurate.</p>
+            </div>
+        `;
+    }
+
+    if (result.status === "error" || !result.data) {
+        return "";
+    }
+
+    const ai = result.data;
 
     const nextSteps = Array.isArray(ai.next_steps) ? ai.next_steps : [];
     const suggestedChecks = Array.isArray(ai.suggested_checks) ? ai.suggested_checks : [];
@@ -259,15 +246,6 @@ function renderAiExplanation(ai) {
             </div>
         </div>
     `;
-}
-
-// Simple string hash for cache keys — not cryptographic, just for deduplication.
-function simpleHash(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
-    }
-    return (hash >>> 0).toString(36);
 }
 
 function escapeHtml(text) {
