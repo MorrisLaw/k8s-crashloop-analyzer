@@ -84,13 +84,17 @@ class GeminiExplainer {
             });
 
             if (!response.ok) {
+                const errorBody = await response.text().catch(() => "");
+                console.error("[gemini] API error:", response.status, errorBody.slice(0, 500));
                 return null;
             }
 
             const payload = await response.json();
             const outputText = payload?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            console.log("[gemini] raw output:", outputText.slice(0, 500));
             const parsed = safeParseJson(outputText);
             if (!parsed) {
+                console.error("[gemini] failed to parse JSON from output");
                 return null;
             }
 
