@@ -167,6 +167,26 @@ async function analyzeLogs() {
 async function fetchAiAssistedExplanation(result, fullLogText) {
     // Deterministic output is primary. This optional AI call is best-effort only.
     // If unavailable, disabled, or failing, we return null and keep core behavior unchanged.
+
+    // Check localStorage cache first — AI explanations for the same cause are reusable.
+    const CACHE_KEY_PREFIX = "ai_cache_";
+    const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+    const cacheKey = CACHE_KEY_PREFIX + result.cause;
+
+    try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_TTL_MS) {
+                console.log("AI response loaded from cache for:", result.cause);
+                return data;
+            }
+            localStorage.removeItem(cacheKey);
+        }
+    } catch (_e) {
+        // localStorage unavailable or corrupt — continue to fetch
+    }
+
     try {
         const response = await fetch("/api/ai-explanation", {
             method: "POST",
@@ -192,7 +212,19 @@ async function fetchAiAssistedExplanation(result, fullLogText) {
 
         const payload = await response.json();
         console.log("AI API payload:", payload);
-        return payload?.ai || null;
+        const ai = payload?.ai || null;
+
+        // Cache successful responses in localStorage
+        if (ai) {
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify({ data: ai, timestamp: Date.now() }));
+                console.log("AI response cached for:", result.cause);
+            } catch (_e) {
+                // Quota exceeded or unavailable — non-critical
+            }
+        }
+
+        return ai;
     } catch (_err) {
         console.warn("AI API fetch failed:", _err);
         return null;
