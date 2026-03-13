@@ -2,7 +2,9 @@
 
 A Kubernetes CrashLoopBackOff debugging tool that combines deterministic failure-pattern detection with optional AI-assisted explanation.
 
-![K8s CrashLoop Analyzer Screenshot](docs/screenshot.png)
+![Deterministic Analysis](docs/top_screenshot.png)
+
+![AI-Assisted Explanation](docs/bottom_screenshot.png)
 
 ## Problem Statement
 
@@ -50,16 +52,18 @@ Last State:     Terminated
 {
   "summary": "The container likely exceeded memory limits during startup and was restarted.",
   "next_steps": [
-    "Inspect previous container logs for memory spikes",
-    "Compare pod memory limits against observed usage",
-    "Adjust limits/requests and redeploy"
+    "kubectl top pod my-app-5d4b7c8f9b-xyz12 -n default",
+    "kubectl logs my-app-5d4b7c8f9b-xyz12 --previous -n default",
+    "kubectl describe pod my-app-5d4b7c8f9b-xyz12 -n default"
   ],
   "suggested_checks": [
-    "kubectl top pod <pod>",
-    "kubectl describe pod <pod>"
+    "kubectl get pod my-app-5d4b7c8f9b-xyz12 -o jsonpath='{.spec.containers[*].resources}'",
+    "kubectl get events -n default --sort-by=.lastTimestamp"
   ]
 }
 ```
+
+The AI returns **runnable kubectl commands** using the actual pod, deployment, and namespace names from the pasted logs — not generic advice.
 
 ## Architecture Overview
 
@@ -122,6 +126,14 @@ Vercel injects this env var at runtime; `dotenv` is only for local dev.
 ## Rate Limiting
 
 `/api/ai-explanation` is limited to 10 requests per minute per IP (in-memory).
+
+The AI provider (Groq free tier) has a limit of 30 requests per minute. If the limit is hit, users see a friendly message suggesting they wait and try again.
+
+## Paid Tier Interest
+
+This tool currently runs on Groq's free tier. If there's enough interest, a paid tier with higher limits, faster responses, and additional features may be offered.
+
+[Register your interest here](https://forms.gle/W2xPf67LTkpf3CuS7) — I'll only reach out if a paid option becomes available.
 
 ## Project Structure
 
