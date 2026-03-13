@@ -262,12 +262,12 @@ function renderAiExplanation(result) {
             <h3>AI-assisted explanation</h3>
             <p>${escapeHtml(ai.summary || "")}</p>
             <div class="suggestions">
-                <strong>Likely next troubleshooting steps:</strong>
-                ${nextSteps.map((step) => `<div class="suggestion">${escapeHtml(step)}</div>`).join("")}
+                <strong>Next troubleshooting commands:</strong>
+                ${nextSteps.map((step) => `<div class="suggestion"><code>${escapeHtml(step)}</code></div>`).join("")}
             </div>
             <div class="suggestions">
-                <strong>Suggested follow-up checks:</strong>
-                ${suggestedChecks.map((check) => `<div class="suggestion">${escapeHtml(check)}</div>`).join("")}
+                <strong>Follow-up commands:</strong>
+                ${suggestedChecks.map((check) => `<div class="suggestion"><code>${escapeHtml(check)}</code></div>`).join("")}
             </div>
         </div>
     `;

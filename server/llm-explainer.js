@@ -24,6 +24,8 @@ function buildSystemPrompt() {
         "Avoid hallucinating Kubernetes states not present in the input.",
         "Do not claim certainty.",
         "Keep the answer concise and operational.",
+        "Every item in next_steps and suggested_checks MUST be a specific, runnable kubectl command or shell command — not a plain-English suggestion.",
+        "Use actual pod, deployment, and namespace names from the log snippet when available.",
         "Return strict JSON with keys: summary, next_steps, suggested_checks."
     ].join(" ");
 }
@@ -34,9 +36,10 @@ function buildUserPrompt({ cause, explanation, logSnippet }) {
         deterministic_explanation: explanation,
         sanitized_log_snippet: logSnippet,
         instructions: [
-            "Explain what likely happened in plain English.",
-            "Provide 2-3 practical next troubleshooting steps.",
-            "Provide 2-3 suggested follow-up checks.",
+            "Explain what likely happened in plain English in the summary field.",
+            "Provide 2-3 specific runnable kubectl commands as next troubleshooting steps. Use real pod/deployment/namespace names from the log snippet.",
+            "Provide 2-3 specific runnable kubectl or shell commands as follow-up checks. Use real names from the log snippet.",
+            "Do NOT provide vague advice like 'check the memory limits' — always give the exact command to run.",
             "Keep output brief and actionable."
         ]
     });
